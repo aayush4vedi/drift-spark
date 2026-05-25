@@ -23,3 +23,4 @@ drift status --sink qdrant://localhost:6333/docs
 - Lineage ledger — per-embedding cost, source tracing, GDPR-delete proof (SQLite, queryable)
 
 **GitHub:** https://github.com/aayush4vedi/drift-spark
+**PyPI**: https://pypi.org/project/drift-spark/0.0.1/
