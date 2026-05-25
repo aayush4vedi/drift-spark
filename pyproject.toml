@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "drift-spark"
+version = "0.0.1"
+description = "Spark-native embedding lifecycle — produce, CDC refresh, migrate, audit."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+  { name = "Aayush Chaturvedi", email = "4vedi.aayush@gmail.com" },
+]
+keywords = ["spark", "embeddings", "vector-database", "qdrant", "delta-lake", "cdc", "rag"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+Homepage = "https://github.com/aayush4vedi/drift"
+Repository = "https://github.com/aayush4vedi/drift"
+
+[project.scripts]
+drift = "drift.cli:app"
+
+[project.optional-dependencies]
+spark = ["pyspark>=3.4.0"]
+qdrant = ["qdrant-client>=1.9.0"]
+pgvector = ["psycopg2-binary>=2.9.0"]
+all = ["pyspark>=3.4.0", "qdrant-client>=1.9.0", "psycopg2-binary>=2.9.0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/drift"]
