@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "drift-spark"
-version = "0.1.0"
+version = "0.1.1"
 description = "Spark-native embedding lifecycle — produce, CDC refresh, migrate, audit."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -24,17 +24,16 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+dependencies = [
+  "typer>=0.12.0",
+]
 
 [project.urls]
-Homepage = "https://github.com/aayush4vedi/drift-sparkt"
+Homepage = "https://github.com/aayush4vedi/drift-spark"
 Repository = "https://github.com/aayush4vedi/drift-spark"
 
 [project.scripts]
 drift = "drift.cli:app"
-
-dependencies = [
-  "typer>=0.12.0",
-]
 
 [project.optional-dependencies]
 spark = ["pyspark>=3.4.0"]
