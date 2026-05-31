@@ -58,6 +58,10 @@ def watch(
     sink: str = typer.Option(..., "--sink"),
     model: str = typer.Option("openai/text-embedding-3-small", "--model"),
     since_version: Optional[int] = typer.Option(None, "--since-version", help="Delta version to start from"),
+    shadow_mode: bool = typer.Option(
+        False, "--shadow-mode",
+        help="Mock embeddings — no API calls, no cost. Same as embed --shadow-mode.",
+    ),
 ):
     """Incrementally refresh embeddings from a Delta table via CDC."""
     from .watch import watch as _watch
@@ -71,6 +75,7 @@ def watch(
             sink=sink,
             model=model,
             since_version=since_version,
+            shadow_mode=shadow_mode,
             ledger=Ledger(),
         )
         typer.echo(f"  ✓ inserted={run.n_inserted}  updated={run.n_updated}  deleted={run.n_deleted}")

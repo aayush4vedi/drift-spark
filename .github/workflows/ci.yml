@@ -8,6 +8,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -15,11 +16,17 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install
-        run: pip install -e ".[all,dev]"
+      - name: Install drift-spark + dev deps
+        run: |
+          pip install -e ".[qdrant,pgvector]" pytest ruff
+          pip install pandas
+        # Excludes pyspark — too heavy for CI; all tests mock SparkSession/DataFrames.
+        # pandas needed by _spark_mock() helpers in test_embed.py + test_watch.py.
+        # Spark + Delta paths are covered by integration-tests/ (run locally).
 
       - name: Lint
         run: ruff check src/ tests/
 
       - name: Test
         run: pytest tests/ -v
+        # integration-tests/ is excluded — requires Docker (Qdrant) + delta-spark locally.
