@@ -160,9 +160,9 @@ def test_embed_writes_provenance(tmp_path):
 
     with patch("drift.embed._upsert_qdrant"):
         embed(df=_spark_mock(texts), text_col="body",
-              model="openai/text-embedding-3-small",
-              sink="qdrant://localhost/col",
-              shadow_mode=True, ledger=ledger)
+                model="openai/text-embedding-3-small",
+                sink="qdrant://localhost/col",
+                shadow_mode=True, ledger=ledger)
 
     h = _text_hash(texts[0])
     assert ledger.hash_exists(h, "openai/text-embedding-3-small", "qdrant://localhost/col")
@@ -233,6 +233,36 @@ def test_mock_embedding_is_unit_vector():
 
 def test_mock_embedding_default_dim():
     assert len(_mock_embedding("x")) == 1536
+
+
+def test_ledger_provenance_returns_full_lineage(tmp_path):
+    ledger = Ledger(db_path=tmp_path / "test.db")
+    texts = ["provenance lineage text"]
+
+    with patch("drift.embed._upsert_qdrant") as mock_upsert:
+        embed(df=_spark_mock(texts), text_col="body",
+                model="openai/text-embedding-3-small",
+                sink="qdrant://localhost/col",
+                shadow_mode=True, ledger=ledger)
+
+    # Recover the embedding_id that was upserted
+    captured_points = mock_upsert.call_args[0][1]   # second positional arg = points list
+    embedding_id = captured_points[0]["id"]
+
+    result = ledger.provenance(embedding_id)
+
+    assert result is not None
+    assert result["embedding_id"] == embedding_id
+    assert result["model"] == "openai/text-embedding-3-small"
+    assert result["sink"] == "qdrant://localhost/col"
+    assert result["source_hash"] == _text_hash(texts[0])
+    assert result["cost_usd"] == 0.0
+    assert result["run_timestamp"]  # non-empty ISO string
+
+
+def test_ledger_provenance_returns_none_for_unknown_id(tmp_path):
+    ledger = Ledger(db_path=tmp_path / "test.db")
+    assert ledger.provenance("does-not-exist") is None
 
 
 # ── other module scaffold tests still pass ───────────────────────────────────

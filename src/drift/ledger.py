@@ -83,5 +83,32 @@ class Ledger:
         cols = ["run_id", "timestamp", "model", "n_rows", "n_deduped", "cost_usd", "duration_s"]
         return [dict(zip(cols, r)) for r in cur.fetchall()]
 
+    def provenance(self, embedding_id: str) -> dict | None:
+        """
+        Full lineage for a single vector: what text produced it, with which
+        model, into which sink, at what run cost, and when.
+
+        Returns None if the embedding_id is not in the ledger (e.g. it was
+        embedded before Drift was introduced, or the ledger was wiped).
+
+        The cost_usd returned is the total cost of the run that produced this
+        vector — not the per-vector cost (which isn't tracked at v0.1 granularity).
+        """
+        cur = self._conn.execute(
+            """SELECT p.embedding_id, p.source_pk, p.source_hash, p.created_at,
+                      r.model, r.sink, r.cost_usd, r.timestamp AS run_timestamp
+               FROM embedding_provenance p
+               JOIN embed_runs r ON p.run_id = r.run_id
+               WHERE p.embedding_id = ?
+               LIMIT 1""",
+            (embedding_id,),
+        )
+        row = cur.fetchone()
+        if row is None:
+            return None
+        cols = ["embedding_id", "source_pk", "source_hash", "created_at",
+                "model", "sink", "cost_usd", "run_timestamp"]
+        return dict(zip(cols, row))
+
     def close(self) -> None:
         self._conn.close()
