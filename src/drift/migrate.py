@@ -49,16 +49,27 @@ def _scroll_qdrant_texts(sink: str, collection: str) -> list[str]:
     u = urlparse(sink)
     client = QdrantClient(host=u.hostname or "localhost", port=u.port or 6333)
 
+    try:
+        from qdrant_client.http.exceptions import UnexpectedResponse
+    except ImportError:
+        UnexpectedResponse = Exception  # fallback; scroll will still raise
+
     texts: list[str] = []
     offset = None
     while True:
-        results, offset = client.scroll(
-            collection_name=collection,
-            limit=100,
-            with_payload=True,    # need source_text from payload
-            with_vectors=False,   # vectors not needed — saves bandwidth
-            offset=offset,
-        )
+        try:
+            results, offset = client.scroll(
+                collection_name=collection,
+                limit=100,
+                with_payload=True,    # need source_text from payload
+                with_vectors=False,   # vectors not needed — saves bandwidth
+                offset=offset,
+            )
+        except UnexpectedResponse as exc:
+            if "404" in str(exc) or "Not found" in str(exc):
+                # Collection doesn't exist yet — treat as empty
+                return []
+            raise
         for point in results:
             text = point.payload.get("source_text", "")
             if text:
