@@ -1,10 +1,18 @@
 """CLI smoke tests — no Spark, no Docker, no API keys needed."""
 
+import re
+
 from typer.testing import CliRunner
 
 from drift.cli import app
 
-runner = CliRunner()
+# CI has no TTY but Typer still emits ANSI in help text; strip before substring checks.
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+runner = CliRunner(env={"NO_COLOR": "1"})
+
+
+def _plain(text: str) -> str:
+    return _ANSI.sub("", text)
 
 
 # ── help text ────────────────────────────────────────────────────────────────
@@ -19,29 +27,33 @@ def test_help_exits_zero_and_lists_all_commands():
 def test_embed_help_shows_key_flags():
     result = runner.invoke(app, ["embed", "--help"])
     assert result.exit_code == 0
+    out = _plain(result.output)
     for flag in ("--table", "--text-col", "--model", "--sink", "--shadow-mode", "--no-dedup"):
-        assert flag in result.output
+        assert flag in out
 
 
 def test_watch_help_shows_key_flags():
     result = runner.invoke(app, ["watch", "--help"])
     assert result.exit_code == 0
+    out = _plain(result.output)
     for flag in ("--table", "--text-col", "--sink", "--since-version", "--shadow-mode"):
-        assert flag in result.output
+        assert flag in out
 
 
 def test_status_help_shows_sink_and_limit():
     result = runner.invoke(app, ["status", "--help"])
     assert result.exit_code == 0
-    assert "--sink" in result.output
-    assert "--limit" in result.output
+    out = _plain(result.output)
+    assert "--sink" in out
+    assert "--limit" in out
 
 
 def test_migrate_help_shows_from_to_strategy():
     result = runner.invoke(app, ["migrate", "--help"])
     assert result.exit_code == 0
+    out = _plain(result.output)
     for flag in ("--from", "--to", "--sink", "--strategy"):
-        assert flag in result.output
+        assert flag in out
 
 
 # ── drift status — real ledger smoke test ────────────────────────────────────
