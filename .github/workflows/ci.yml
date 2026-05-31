@@ -16,7 +16,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install
-        run: pip install -e ".[all]" pytest ruff
+        run: pip install -e ".[all,dev]"
 
       - name: Lint
         run: ruff check src/ tests/
