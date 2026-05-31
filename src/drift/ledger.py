@@ -29,11 +29,28 @@ CREATE TABLE IF NOT EXISTS embedding_provenance (
 )"""
 
 
+_CREATE_WATCH_RUNS = """
+CREATE TABLE IF NOT EXISTS watch_runs (
+    run_id        TEXT PRIMARY KEY,
+    timestamp     TEXT,
+    source_table  TEXT,
+    sink          TEXT,
+    since_version INTEGER,
+    to_version    INTEGER,
+    n_inserted    INTEGER,
+    n_updated     INTEGER,
+    n_deleted     INTEGER,
+    duration_s    REAL
+)"""
+
+
 class Ledger:
     def __init__(self, db_path: Path = DEFAULT_DB):
         db_path.parent.mkdir(parents=True, exist_ok=True)
         self._conn = sqlite3.connect(db_path)
-        self._conn.executescript(_CREATE_RUNS + ";" + _CREATE_PROVENANCE)
+        self._conn.executescript(
+            _CREATE_RUNS + ";" + _CREATE_PROVENANCE + ";" + _CREATE_WATCH_RUNS
+        )
         self._conn.commit()
 
     def write_run(self, run) -> None:
@@ -109,6 +126,31 @@ class Ledger:
         cols = ["embedding_id", "source_pk", "source_hash", "created_at",
                 "model", "sink", "cost_usd", "run_timestamp"]
         return dict(zip(cols, row))
+
+    def write_watch_run(self, run) -> None:
+        """Persist a WatchRun to the ledger (checkpoint for next watch() call)."""
+        self._conn.execute(
+            """INSERT OR REPLACE INTO watch_runs
+               VALUES (:run_id, :timestamp, :source_table, :sink, :since_version,
+                       :to_version, :n_inserted, :n_updated, :n_deleted, :duration_s)""",
+            vars(run),
+        )
+        self._conn.commit()
+
+    def last_watch_version(self, source_table: str, sink: str) -> int | None:
+        """
+        Return the to_version of the most recent watch() run for this
+        (source_table, sink) pair — the starting point for the next incremental run.
+        Returns None if no prior watch() run exists (first run → caller uses 0).
+        """
+        cur = self._conn.execute(
+            """SELECT to_version FROM watch_runs
+               WHERE source_table = ? AND sink = ?
+               ORDER BY timestamp DESC LIMIT 1""",
+            (source_table, sink),
+        )
+        row = cur.fetchone()
+        return row[0] if row else None
 
     def close(self) -> None:
         self._conn.close()
