@@ -87,9 +87,15 @@ def test_status_with_seeded_ledger(tmp_path):
     assert "rows=5" in result.output
 
 
-# ── drift migrate — stub behaviour ──────────────────────────────────────────
+# ── drift migrate — strategy validation & dual-write ────────────────────────
 
-def test_migrate_dual_write_exits_one_with_stub_message():
+def test_migrate_dual_write_without_qdrant_exits_one(tmp_path, monkeypatch):
+    """dual-write is implemented in v0.3; without a reachable Qdrant it must fail."""
+    monkeypatch.setattr(
+        "drift.migrate._scroll_qdrant_texts",
+        lambda *a, **kw: (_ for _ in ()).throw(ConnectionError("qdrant unreachable")),
+    )
+
     result = runner.invoke(app, [
         "migrate",
         "--from", "openai/text-embedding-3-small",
@@ -97,8 +103,7 @@ def test_migrate_dual_write_exits_one_with_stub_message():
         "--sink",  "qdrant://localhost/col",
     ])
     assert result.exit_code == 1
-    # NotImplementedError message must appear somewhere in output
-    assert "stub" in result.output or "v0.2" in result.output or "v2.0" in result.output
+    assert "qdrant unreachable" in result.output or result.exception is not None
 
 
 def test_migrate_unknown_strategy_exits_one():
@@ -120,4 +125,5 @@ def test_migrate_shadow_eval_exits_one_with_v2_message():
         "--strategy", "shadow-eval",
     ])
     assert result.exit_code == 1
-    assert "v2.0" in result.output
+    assert "[stub]" in result.output
+    assert "v2" in result.output
