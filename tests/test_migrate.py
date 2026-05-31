@@ -87,9 +87,9 @@ def test_migrate_dual_write_shadow_mode(tmp_path, monkeypatch):
 
     monkeypatch.setattr("drift.migrate._scroll_qdrant_texts", lambda *a, **kw: FAKE_TEXTS)
 
-    mock_spark = _mock_spark_for_migrate(FAKE_TEXTS)
     monkeypatch.setattr(
-        "pyspark.sql.SparkSession.getActiveSession", lambda: mock_spark
+        "drift.migrate._get_spark",
+        lambda: _mock_spark_for_migrate(FAKE_TEXTS),
     )
 
     with patch("drift.embed._upsert_qdrant"):
@@ -116,8 +116,10 @@ def test_migrate_sink_v2_uri_derivation(tmp_path, monkeypatch):
     """sink_v2 appends _v2 to the collection name, preserving host/port."""
     ledger = Ledger(db_path=tmp_path / "test.db")
     monkeypatch.setattr("drift.migrate._scroll_qdrant_texts", lambda *a, **kw: FAKE_TEXTS)
-    mock_spark = _mock_spark_for_migrate(FAKE_TEXTS)
-    monkeypatch.setattr("pyspark.sql.SparkSession.getActiveSession", lambda: mock_spark)
+    monkeypatch.setattr(
+        "drift.migrate._get_spark",
+        lambda: _mock_spark_for_migrate(FAKE_TEXTS),
+    )
 
     with patch("drift.embed._upsert_qdrant"):
         run = migrate(
@@ -175,8 +177,10 @@ def test_cli_migrate_shadow_mode_runs(tmp_path, monkeypatch):
 
     ledger = Ledger(db_path=tmp_path / "cli.db")
     monkeypatch.setattr("drift.migrate._scroll_qdrant_texts", lambda *a, **kw: FAKE_TEXTS)
-    mock_spark = _mock_spark_for_migrate(FAKE_TEXTS)
-    monkeypatch.setattr("pyspark.sql.SparkSession.getActiveSession", lambda: mock_spark)
+    monkeypatch.setattr(
+        "drift.migrate._get_spark",
+        lambda: _mock_spark_for_migrate(FAKE_TEXTS),
+    )
 
     runner = CliRunner()
     with patch("drift.embed._upsert_qdrant"), patch("drift.ledger.Ledger", return_value=ledger):
