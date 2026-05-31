@@ -110,12 +110,16 @@ def status(
 
 @app.command()
 def migrate(
-    from_model: str = typer.Option(..., "--from", help="Current model string"),
-    to_model: str = typer.Option(..., "--to", help="Target model string"),
+    from_model: str = typer.Option(..., "--from", help="Current model string, e.g. openai/text-embedding-ada-002"),
+    to_model: str = typer.Option(..., "--to", help="Target model string, e.g. openai/text-embedding-3-small"),
     sink: str = typer.Option(..., "--sink", help="Sink URI of the existing collection"),
     strategy: str = typer.Option("dual-write", "--strategy", help="dual-write | shadow-eval | drift-adapter"),
+    shadow_mode: bool = typer.Option(
+        False, "--shadow-mode",
+        help="Mock embeddings — no API calls, no cost. Safe for testing migration flow.",
+    ),
 ):
-    """Migrate embeddings between models (v1.0: dual-write only)."""
+    """Migrate embeddings to a new model using dual-write (re-embed all docs into <collection>_v2)."""
     from .migrate import migrate as _migrate, STRATEGIES
     from .ledger import Ledger
 
@@ -124,13 +128,42 @@ def migrate(
         raise typer.Exit(code=1)
 
     typer.echo(f"[drift migrate] {from_model} → {to_model}  strategy={strategy}  sink={sink}")
+
     try:
-        run = _migrate(from_model=from_model, to_model=to_model, sink=sink,
-                       strategy=strategy, ledger=Ledger())
-        typer.echo(f"  ✓ migrated={run.n_migrated}  new_collection={run.collection_new}")
+        run = _migrate(
+            from_model=from_model,
+            to_model=to_model,
+            sink=sink,
+            strategy=strategy,
+            shadow_mode=shadow_mode,
+            ledger=Ledger(),
+        )
     except NotImplementedError as e:
         typer.echo(f"  [stub] {e}", err=True)
         raise typer.Exit(code=1)
+
+    icon = "✓" if run.n_migrated == run.n_source else "⚠"
+    typer.echo(f"  {icon} Migration complete: {run.n_migrated}/{run.n_source} vectors written")
+    typer.echo(f"  New collection: {run.sink_v2}")
+    typer.echo(f"  Duration: {run.duration_s:.1f}s")
+
+    if run.n_migrated != run.n_source:
+        missing = run.n_source - run.n_migrated
+        typer.echo(f"\n  ⚠ {missing} vectors missing from new collection.", err=True)
+        typer.echo(
+            "  Likely cause: those points have no source_text payload "
+            "(embedded by a tool other than drift embed).",
+            err=True,
+        )
+
+    typer.echo("\n  Next steps:")
+    typer.echo("    1. Catch-up:  drift watch --table <source-table> --text-col <col> \\")
+    typer.echo(f"                        --sink {run.sink_v2} --model {to_model}")
+    typer.echo("       (syncs docs added during migration — run once before validating)")
+    typer.echo(f"    2. Validate:  run your real queries against {run.sink_v2}")
+    typer.echo(f"    3. Cutover:   update your app to query {run.sink_v2}")
+    typer.echo(f"    4. Monitor:   drift status --sink {run.sink_v2}")
+    typer.echo(f"    5. Cleanup:   delete {run.sink} when satisfied")
 
 
 if __name__ == "__main__":
