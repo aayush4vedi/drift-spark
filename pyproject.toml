@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "drift-spark"
-version = "0.2.1"
+version = "0.3.0"
 description = "Spark-native embedding lifecycle — produce, CDC refresh, migrate, audit."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -39,12 +39,14 @@ drift = "drift.cli:app"
 spark = ["pyspark>=3.4.0", "pandas>=2.0"]
 qdrant = ["qdrant-client>=1.9.0"]
 pgvector = ["psycopg2-binary>=2.9.0"]
+delta = ["delta-spark>=3.0.0"]
 dev = ["pytest>=8.0", "ruff>=0.4"]
 all = [
   "pyspark>=3.4.0",
   "pandas>=2.0",
   "qdrant-client>=1.9.0",
   "psycopg2-binary>=2.9.0",
+  "delta-spark>=3.0.0",
 ]
 
 [tool.hatch.build.targets.wheel]
