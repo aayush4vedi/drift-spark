@@ -21,10 +21,12 @@ class MigrateRun:
     to_model: str = ""
     strategy: str = "dual-write"
     sink: str = ""       # original collection URI
-    sink_v2: str = ""    # new collection URI (<collection>_v2)
-    n_source: int = 0    # vectors scrolled from old collection
-    n_migrated: int = 0  # vectors written to new collection (should == n_source)
+    sink_v2: str = ""    # new collection URI (<collection>_v2) — dual-write only
+    n_source: int = 0    # vectors scrolled / pairs sampled
+    n_migrated: int = 0  # vectors written to new collection (dual-write only)
     duration_s: float = 0.0
+    adapter_path: str = ""  # path to saved .npy file (drift-adapter only)
+    arr: float = 0.0        # ARR score from measure_arr() (drift-adapter only)
 
 
 # ── sink helpers ──────────────────────────────────────────────────────────────
@@ -171,18 +173,16 @@ def migrate(
         raise ValueError(
             f"Unknown strategy: {strategy!r}. Choose from {STRATEGIES}."
         )
-    if strategy != "dual-write":
+    if strategy == "shadow-eval":
         raise NotImplementedError(
-            f"strategy={strategy!r} is planned for v2. "
-            "Only 'dual-write' is available in v0.3. "
-            "See docs/competitors.md and build guide 6-migrate-dual-write.md "
-            "for the v2 Drift-Adapter implementation plan."
+            "strategy='shadow-eval' is planned for v2. "
+            "Use 'dual-write' or 'drift-adapter' in v1.0."
         )
 
     u = urlparse(sink)
     if u.scheme != "qdrant":
         raise NotImplementedError(
-            f"migrate() only supports qdrant:// sinks in v0.3. Got: {u.scheme!r}. "
+            f"migrate() only supports qdrant:// sinks in v1.0. Got: {u.scheme!r}. "
             "pgvector migration coming in v0.4."
         )
 
@@ -190,19 +190,59 @@ def migrate(
     if ledger is None:
         ledger = _Ledger()
 
-    # Derive new collection URI by appending _v2 to the collection name
-    old_collection = u.path.strip("/")
-    new_collection = f"{old_collection}_v2"
-    sink_v2 = urlunparse(u._replace(path=f"/{new_collection}"))
-
     run = MigrateRun(
         from_model=from_model,
         to_model=to_model,
         strategy=strategy,
         sink=sink,
-        sink_v2=sink_v2,
     )
     t0 = time.monotonic()
+    old_collection = u.path.strip("/")
+
+    # ── drift-adapter strategy ────────────────────────────────────────────────
+    if strategy == "drift-adapter":
+        from .adapter import DriftAdapter
+        from .shadow_eval import measure_arr
+
+        N_PAIRS = 5000
+        all_old, all_new = DriftAdapter._sample_paired_texts(
+            sink=sink,
+            n_pairs=N_PAIRS,
+            from_model=from_model,
+            to_model=to_model,
+            shadow_mode=shadow_mode,
+        )
+
+        N = len(all_old)
+        run.n_source = N
+
+        if N < 20:
+            raise ValueError(
+                f"Only {N} texts found in collection — need at least 20 for a "
+                "meaningful 90/10 train/val split. Add more documents first."
+            )
+
+        split = int(N * 0.9)
+        train_old, val_old = all_old[:split], all_old[split:]
+        train_new, val_new = all_new[:split], all_new[split:]
+
+        adapter = DriftAdapter().fit(train_old, train_new)
+
+        k = min(10, len(val_old) - 1)
+        arr = measure_arr(adapter, val_old, val_new, k=k)  # raises AdapterQualityError if < 0.97
+
+        adapter_path = f"drift_adapter_{run.run_id[:8]}.npy"
+        adapter.save(adapter_path)
+
+        run.adapter_path = adapter_path
+        run.arr = arr
+        run.duration_s = time.monotonic() - t0
+        return run
+
+    # ── dual-write strategy ───────────────────────────────────────────────────
+    new_collection = f"{old_collection}_v2"
+    sink_v2 = urlunparse(u._replace(path=f"/{new_collection}"))
+    run.sink_v2 = sink_v2
 
     # Phase 1: scroll all source_text values from the old collection
     texts = _scroll_qdrant_texts(sink, old_collection)
