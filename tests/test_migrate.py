@@ -76,6 +76,7 @@ def test_migrate_rejects_non_qdrant_sink(tmp_path):
 
 def test_migrate_dual_write_shadow_mode(tmp_path, monkeypatch):
     """Full happy path: scroll 3 texts → re-embed into _v2 collection."""
+    pytest.importorskip("pyspark")
     ledger = Ledger(db_path=tmp_path / "test.db")
 
     monkeypatch.setattr("drift.migrate._scroll_qdrant_texts", lambda *a, **kw: FAKE_TEXTS)
@@ -107,6 +108,7 @@ def test_migrate_dual_write_shadow_mode(tmp_path, monkeypatch):
 
 def test_migrate_sink_v2_uri_derivation(tmp_path, monkeypatch):
     """sink_v2 appends _v2 to the collection name, preserving host/port."""
+    pytest.importorskip("pyspark")
     ledger = Ledger(db_path=tmp_path / "test.db")
     monkeypatch.setattr("drift.migrate._scroll_qdrant_texts", lambda *a, **kw: FAKE_TEXTS)
     mock_spark = _mock_spark_for_migrate(FAKE_TEXTS)
@@ -163,6 +165,7 @@ def test_cli_migrate_stub_unsupported_strategy():
 
 def test_cli_migrate_shadow_mode_runs(tmp_path, monkeypatch):
     """CLI migrate with shadow_mode completes and prints next steps."""
+    pytest.importorskip("pyspark")
     from typer.testing import CliRunner
     from drift.cli import app
 
