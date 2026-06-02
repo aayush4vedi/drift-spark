@@ -142,28 +142,46 @@ def migrate(
         typer.echo(f"  [stub] {e}", err=True)
         raise typer.Exit(code=1)
 
-    icon = "✓" if run.n_migrated == run.n_source else "⚠"
-    typer.echo(f"  {icon} Migration complete: {run.n_migrated}/{run.n_source} vectors written")
-    typer.echo(f"  New collection: {run.sink_v2}")
-    typer.echo(f"  Duration: {run.duration_s:.1f}s")
+    if run.adapter_path:
+        # drift-adapter: no new collection, old index stays unchanged
+        typer.echo("  ✓ Adapter fitted and saved")
+        typer.echo(f"  ARR:     {run.arr:.3f}  (threshold: 0.97)")
+        typer.echo(f"  Adapter: {run.adapter_path}")
+        typer.echo(f"  Trained on {run.n_source} paired samples from {sink}")
+        typer.echo("\n  Apply at query time:")
+        typer.echo("    from drift import DriftAdapter")
+        typer.echo(f"    adapter = DriftAdapter.load('{run.adapter_path}')")
+        typer.echo("    adapted_vec = adapter.predict(new_model_query_vec)")
+        typer.echo(f"    # search {sink} with adapted_vec (no reindex needed)")
+        typer.echo("\n  Next steps:")
+        typer.echo("    1. Catch-up: drift watch --table <source-table> --text-col <col> \\")
+        typer.echo(f"                       --sink {sink} --model {to_model}")
+        typer.echo("       (syncs docs added after the adapter was trained)")
+        typer.echo(f"    2. Monitor:  drift status --sink {sink}")
+    else:
+        # dual-write: new collection created
+        icon = "✓" if run.n_migrated == run.n_source else "⚠"
+        typer.echo(f"  {icon} Migration complete: {run.n_migrated}/{run.n_source} vectors written")
+        typer.echo(f"  New collection: {run.sink_v2}")
+        typer.echo(f"  Duration: {run.duration_s:.1f}s")
 
-    if run.n_migrated != run.n_source:
-        missing = run.n_source - run.n_migrated
-        typer.echo(f"\n  ⚠ {missing} vectors missing from new collection.", err=True)
-        typer.echo(
-            "  Likely cause: those points have no source_text payload "
-            "(embedded by a tool other than drift embed).",
-            err=True,
-        )
+        if run.n_migrated != run.n_source:
+            missing = run.n_source - run.n_migrated
+            typer.echo(f"\n  ⚠ {missing} vectors missing from new collection.", err=True)
+            typer.echo(
+                "  Likely cause: those points have no source_text payload "
+                "(embedded by a tool other than drift embed).",
+                err=True,
+            )
 
-    typer.echo("\n  Next steps:")
-    typer.echo("    1. Catch-up:  drift watch --table <source-table> --text-col <col> \\")
-    typer.echo(f"                        --sink {run.sink_v2} --model {to_model}")
-    typer.echo("       (syncs docs added during migration — run once before validating)")
-    typer.echo(f"    2. Validate:  run your real queries against {run.sink_v2}")
-    typer.echo(f"    3. Cutover:   update your app to query {run.sink_v2}")
-    typer.echo(f"    4. Monitor:   drift status --sink {run.sink_v2}")
-    typer.echo(f"    5. Cleanup:   delete {run.sink} when satisfied")
+        typer.echo("\n  Next steps:")
+        typer.echo("    1. Catch-up:  drift watch --table <source-table> --text-col <col> \\")
+        typer.echo(f"                        --sink {run.sink_v2} --model {to_model}")
+        typer.echo("       (syncs docs added during migration — run once before validating)")
+        typer.echo(f"    2. Validate:  run your real queries against {run.sink_v2}")
+        typer.echo(f"    3. Cutover:   update your app to query {run.sink_v2}")
+        typer.echo(f"    4. Monitor:   drift status --sink {run.sink_v2}")
+        typer.echo(f"    5. Cleanup:   delete {run.sink} when satisfied")
 
 
 if __name__ == "__main__":

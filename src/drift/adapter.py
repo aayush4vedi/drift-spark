@@ -87,5 +87,43 @@ class DriftAdapter:
 
         Used by migrate(strategy="drift-adapter") to build training data.
         Not called during normal adapter.fit() — that takes pre-built arrays.
+
+        In shadow_mode both models use the same deterministic mock vectors,
+        so old_vecs == new_vecs → adapter.R = I → ARR = 1.0. This is correct
+        for shadow_mode: you're testing the pipeline plumbing, not the math.
         """
-        raise NotImplementedError("wired in Phase 3")
+        import random
+        from urllib.parse import urlparse
+
+        from .embed import _embed_openai, _mock_embedding, _parse_model
+        from .migrate import _scroll_qdrant_texts
+
+        u = urlparse(sink)
+        collection = u.path.strip("/")
+        all_texts = _scroll_qdrant_texts(sink, collection)
+
+        if not all_texts:
+            raise ValueError(
+                f"No source_text payloads found in collection {collection!r}. "
+                "Populate the collection with drift embed() before running "
+                "migrate(strategy='drift-adapter')."
+            )
+
+        texts = (
+            random.sample(all_texts, n_pairs)
+            if len(all_texts) > n_pairs
+            else all_texts
+        )
+
+        if shadow_mode:
+            old_vecs = np.array([_mock_embedding(t) for t in texts], dtype=np.float32)
+            new_vecs = np.array([_mock_embedding(t) for t in texts], dtype=np.float32)
+        else:
+            _, old_name = _parse_model(from_model)
+            _, new_name = _parse_model(to_model)
+            old_raw, _ = _embed_openai(texts, old_name, batch_size=128)
+            new_raw, _ = _embed_openai(texts, new_name, batch_size=128)
+            old_vecs = np.array(old_raw, dtype=np.float32)
+            new_vecs = np.array(new_raw, dtype=np.float32)
+
+        return old_vecs, new_vecs
