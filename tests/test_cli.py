@@ -58,8 +58,9 @@ def test_status_no_runs_for_unknown_sink():
 
 def test_status_with_seeded_ledger(tmp_path):
     from unittest.mock import patch
-    from drift.ledger import Ledger
+
     from drift.embed import EmbedRun
+    from drift.ledger import Ledger
 
     ledger = Ledger(db_path=tmp_path / "test.db")
     run = EmbedRun(model="openai/text-embedding-3-small",

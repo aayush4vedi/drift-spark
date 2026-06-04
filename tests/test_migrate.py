@@ -8,7 +8,6 @@ import pytest
 from drift.ledger import Ledger
 from drift.migrate import MigrateRun, migrate
 
-
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 FAKE_TEXTS = [
@@ -150,6 +149,7 @@ def test_migrate_empty_collection(tmp_path, monkeypatch):
 def test_cli_migrate_stub_unsupported_strategy():
     """CLI exits with code 1 for unrecognised strategy."""
     from typer.testing import CliRunner
+
     from drift.cli import app
 
     runner = CliRunner()
@@ -167,6 +167,7 @@ def test_cli_migrate_shadow_mode_runs(tmp_path, monkeypatch):
     """CLI migrate with shadow_mode completes and prints next steps."""
     pytest.importorskip("pyspark")
     from typer.testing import CliRunner
+
     from drift.cli import app
 
     ledger = Ledger(db_path=tmp_path / "cli.db")
@@ -260,7 +261,7 @@ def test_migrate_drift_adapter_quality_gate_propagates(tmp_path, monkeypatch):
 
 
 def test_cli_migrate_drift_adapter_shadow_mode(tmp_path, monkeypatch):
-    """CLI: drift migrate --strategy drift-adapter prints ARR, adapter path, and query instructions."""
+    """CLI: drift migrate --strategy drift-adapter prints ARR, adapter path, query instructions."""
     from typer.testing import CliRunner
 
     from drift.cli import app

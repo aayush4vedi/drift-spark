@@ -46,8 +46,8 @@ def _scroll_qdrant_texts(sink: str, collection: str) -> list[str]:
     """
     try:
         from qdrant_client import QdrantClient
-    except ImportError:
-        raise ImportError("pip install 'drift-spark[qdrant]' to use migrate()")
+    except ImportError as err:
+        raise ImportError("pip install 'drift-spark[qdrant]' to use migrate()") from err
 
     u = urlparse(sink)
     client = QdrantClient(host=u.hostname or "localhost", port=u.port or 6333)

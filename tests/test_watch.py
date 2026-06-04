@@ -8,7 +8,6 @@ import pytest
 from drift.ledger import Ledger
 from drift.watch import WatchRun, _delete_from_sink, watch
 
-
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 def _cdf_mock(inserts=None, updates=None, deletes=None, max_version=5):
@@ -20,7 +19,9 @@ def _cdf_mock(inserts=None, updates=None, deletes=None, max_version=5):
     for text in (inserts or []):
         rows.append({"body": text, "_change_type": "insert", "_commit_version": max_version})
     for text in (updates or []):
-        rows.append({"body": text, "_change_type": "update_postimage", "_commit_version": max_version})
+        rows.append(
+            {"body": text, "_change_type": "update_postimage", "_commit_version": max_version}
+        )
     for text in (deletes or []):
         rows.append({"body": text, "_change_type": "delete", "_commit_version": max_version})
 
@@ -32,7 +33,9 @@ def _cdf_mock(inserts=None, updates=None, deletes=None, max_version=5):
         """Return a mock whose .count() and further .filter() work."""
         m = MagicMock()
         m.count.return_value = len(pdf)
-        m.select.return_value.toPandas.return_value = pdf[["body"]] if len(pdf) else pd.DataFrame({"body": []})
+        m.select.return_value.toPandas.return_value = (
+            pdf[["body"]] if len(pdf) else pd.DataFrame({"body": []})
+        )
 
         def filter_side(expr):
             if "insert" in expr and "update_postimage" in expr:
@@ -80,7 +83,8 @@ def test_watch_embeds_inserts(tmp_path):
          patch("drift.embed._upsert_qdrant"):
 
         spark = MagicMock()
-        spark.read.format.return_value.option.return_value.option.return_value.table.return_value = cdf
+        _t = spark.read.format.return_value.option.return_value.option.return_value.table
+        _t.return_value = cdf
         mock_spark.return_value = spark
 
         run = watch(
@@ -107,7 +111,8 @@ def test_watch_embeds_updates(tmp_path):
          patch("drift.embed._upsert_qdrant"):
 
         spark = MagicMock()
-        spark.read.format.return_value.option.return_value.option.return_value.table.return_value = cdf
+        _t = spark.read.format.return_value.option.return_value.option.return_value.table
+        _t.return_value = cdf
         mock_spark.return_value = spark
 
         run = watch(
@@ -134,7 +139,8 @@ def test_watch_deletes_from_sink(tmp_path):
          patch("drift.watch.embed") as mock_embed:
 
         spark = MagicMock()
-        spark.read.format.return_value.option.return_value.option.return_value.table.return_value = cdf
+        _t = spark.read.format.return_value.option.return_value.option.return_value.table
+        _t.return_value = cdf
         mock_spark.return_value = spark
 
         run = watch(
@@ -162,7 +168,8 @@ def test_watch_empty_cdf_noop(tmp_path):
          patch("drift.watch._delete_from_sink") as mock_delete:
 
         spark = MagicMock()
-        spark.read.format.return_value.option.return_value.option.return_value.table.return_value = cdf
+        _t = spark.read.format.return_value.option.return_value.option.return_value.table
+        _t.return_value = cdf
         mock_spark.return_value = spark
 
         run = watch(
@@ -189,7 +196,8 @@ def test_watch_writes_checkpoint_to_ledger(tmp_path):
          patch("drift.watch.embed"):
 
         spark = MagicMock()
-        spark.read.format.return_value.option.return_value.option.return_value.table.return_value = cdf
+        _t = spark.read.format.return_value.option.return_value.option.return_value.table
+        _t.return_value = cdf
         mock_spark.return_value = spark
 
         run = watch(
@@ -226,7 +234,8 @@ def test_watch_auto_resolves_since_version_from_ledger(tmp_path):
             option_calls.append((k, v))
             return spark.read.format.return_value.option.return_value
         spark.read.format.return_value.option.return_value.option.side_effect = record_option
-        # table() is called on the return value of record_option (= option.return_value), not one level deeper
+        # table() is called on the return value of record_option (= option.return_value),
+        # not one level deeper
         spark.read.format.return_value.option.return_value.table.return_value = cdf
         mock_spark.return_value = spark
 

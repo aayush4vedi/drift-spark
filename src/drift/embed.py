@@ -7,13 +7,12 @@ import math
 import random
 import time
 import uuid
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Iterator
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from ._utils import _get_spark
-
 
 # ── cost table (USD per token) ───────────────────────────────────────────────
 # NOTE: prices hardcoded as of June 2025 (OpenAI). Verify at
@@ -86,13 +85,13 @@ def _embed_openai(
     """Call OpenAI Embeddings API in batches with exponential backoff on 429."""
     try:
         from openai import OpenAI, RateLimitError
-    except ImportError:
-        raise ImportError("pip install openai to use OpenAI models")
+    except ImportError as err:
+        raise ImportError("pip install openai to use OpenAI models") from err
 
     import os
     api_key = os.environ.get("OPENAI_API_KEY", "")
     if not api_key:
-        raise EnvironmentError(
+        raise OSError(
             "OPENAI_API_KEY is not set. "
             "Set it in your environment, or pass shadow_mode=True for cost-free testing."
         )
@@ -125,9 +124,9 @@ def _upsert_qdrant(sink: str, points: list[dict]) -> None:
     """
     try:
         from qdrant_client import QdrantClient
-        from qdrant_client.models import Distance, VectorParams, PointStruct
-    except ImportError:
-        raise ImportError("pip install 'drift-spark[qdrant]' to use the Qdrant sink")
+        from qdrant_client.models import Distance, PointStruct, VectorParams
+    except ImportError as err:
+        raise ImportError("pip install 'drift-spark[qdrant]' to use the Qdrant sink") from err
 
     u = urlparse(sink)
     collection = u.path.strip("/")
@@ -164,8 +163,8 @@ def _upsert_pgvector(sink: str, points: list[dict]) -> None:
     try:
         import psycopg2
         from psycopg2.extras import execute_values
-    except ImportError:
-        raise ImportError("pip install 'drift-spark[pgvector]' to use the pgvector sink")
+    except ImportError as err:
+        raise ImportError("pip install 'drift-spark[pgvector]' to use the pgvector sink") from err
 
     u = urlparse(sink)
     params = parse_qs(u.query)

@@ -9,7 +9,6 @@ import pytest
 from drift.embed import EmbedRun, _mock_embedding, _text_hash, embed
 from drift.ledger import Ledger
 
-
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 def _spark_mock(texts: list[str], col: str = "body") -> MagicMock:

@@ -8,8 +8,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
-from .embed import _text_hash, embed
 from ._utils import _get_spark
+from .embed import _text_hash, embed
 
 
 @dataclass
@@ -34,8 +34,8 @@ def _delete_qdrant(sink: str, texts: list[str]) -> int:
     try:
         from qdrant_client import QdrantClient
         from qdrant_client.models import PointIdsList
-    except ImportError:
-        raise ImportError("pip install 'drift-spark[qdrant]' to use the Qdrant sink")
+    except ImportError as err:
+        raise ImportError("pip install 'drift-spark[qdrant]' to use the Qdrant sink") from err
 
     u = urlparse(sink)
     collection = u.path.strip("/")

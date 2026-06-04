@@ -6,10 +6,6 @@
 
 **Spark-native embedding lifecycle — _dbt for embeddings, Terraform for vector indexes._**
 
-Most teams build RAG on the same throwaway script: read the table, batch-call the embedding API, upsert to a vector store, repeat tomorrow. Drift replaces that with three commands — **`embed`**, **`watch`**, **`migrate`** — and adds the things the script never had: **dedup**, **incremental refresh**, **cost tracking**, and **safe model upgrades**.
-
-The `drift-adapter` upgrade path is a reference implementation of the **Drift-Adapter** paper ([arXiv:2509.23471](https://arxiv.org/abs/2509.23471), EMNLP 2025): near zero-downtime embedding-model migration using Orthogonal Procrustes.
-
 <p>
   <a href="https://pypi.org/project/drift-spark/"><img src="https://img.shields.io/pypi/v/drift-spark.svg?color=2b88d8&label=pypi" alt="PyPI"></a>
   <a href="https://pypi.org/project/drift-spark/"><img src="https://img.shields.io/pypi/pyversions/drift-spark.svg?color=2b88d8" alt="Python versions"></a>
@@ -31,6 +27,11 @@ The `drift-adapter` upgrade path is a reference implementation of the **Drift-Ad
 </p>
 
 </div>
+
+Most teams build RAG on the same throwaway script: read the table, batch-call the embedding API, upsert to a vector store, repeat tomorrow. Drift replaces that with three commands — **`embed`**, **`watch`**, **`migrate`** — and adds the things the script never had: **dedup**, **incremental refresh**, **cost tracking**, and **safe model upgrades**.
+
+> [!NOTE]
+> The `drift-adapter` upgrade path is a reference implementation of the **Drift-Adapter** paper ([arXiv:2509.23471](https://arxiv.org/abs/2509.23471), EMNLP 2025): near zero-downtime embedding-model migration using Orthogonal Procrustes.
 
 ---
 
@@ -232,6 +233,9 @@ ledger.recent_runs("qdrant://localhost:6333/support_docs")
 
 ## API reference
 
+<details>
+<summary><b>Full API & CLI reference</b></summary>
+
 ### `embed(...) → EmbedRun`
 
 ```python
@@ -275,6 +279,8 @@ drift migrate --from MODEL --to MODEL --sink URI --strategy dual-write
 drift status  --sink URI
 ```
 
+</details>
+
 ---
 
 ## How Drift compares
@@ -296,7 +302,7 @@ Full adversarial breakdown: [docs/competitors.md](docs/competitors.md)
 **v0.5.0 ships:** `embed()` (dedup, batching, shadow mode), `watch()` (Delta CDC), `migrate()` (dual-write + Drift-Adapter), ARR quality gate, SQLite lineage ledger.
 
 **Known limitations:**
-- `embed()` collects all texts to the Spark driver via `toPandas()` — safe to ~2M rows; distributed path (broadcast hash set) planned for v0.7
+- `embed()` collects all texts to the Spark driver via `toPandas()` — safe to ~2M rows; distributed path (broadcast hash set) planned for v0.6
 - pgvector sink: write-only — CDC delete and `migrate()` not yet supported (planned v0.6)
 - `shadow-eval` migration strategy planned, not yet implemented (planned v0.6)
 - API pricing in `embed.py` is hardcoded — verify at OpenAI pricing before using for budget decisions; configurable override planned for v1.0

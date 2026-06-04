@@ -26,10 +26,10 @@ def _get_spark(app_name: str = "drift"):
     """Return the active SparkSession or create a local one."""
     try:
         from pyspark.sql import SparkSession
-    except ImportError:
+    except ImportError as err:
         raise ImportError(
             "pip install 'drift-spark[spark]' to use Spark-dependent features"
-        )
+        ) from err
 
     spark = SparkSession.getActiveSession()
     if spark is None:
