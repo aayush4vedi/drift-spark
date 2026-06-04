@@ -1,18 +1,10 @@
 """CLI smoke tests — no Spark, no Docker, no API keys needed."""
 
-import re
-
 from typer.testing import CliRunner
 
 from drift.cli import app
 
-# CI has no TTY but Typer still emits ANSI in help text; strip before substring checks.
-_ANSI = re.compile(r"\x1b\[[0-9;]*m")
-runner = CliRunner(env={"NO_COLOR": "1"})
-
-
-def _plain(text: str) -> str:
-    return _ANSI.sub("", text)
+runner = CliRunner()
 
 
 # ── help text ────────────────────────────────────────────────────────────────
@@ -27,33 +19,29 @@ def test_help_exits_zero_and_lists_all_commands():
 def test_embed_help_shows_key_flags():
     result = runner.invoke(app, ["embed", "--help"])
     assert result.exit_code == 0
-    out = _plain(result.output)
     for flag in ("--table", "--text-col", "--model", "--sink", "--shadow-mode", "--no-dedup"):
-        assert flag in out
+        assert flag in result.output
 
 
 def test_watch_help_shows_key_flags():
     result = runner.invoke(app, ["watch", "--help"])
     assert result.exit_code == 0
-    out = _plain(result.output)
     for flag in ("--table", "--text-col", "--sink", "--since-version", "--shadow-mode"):
-        assert flag in out
+        assert flag in result.output
 
 
 def test_status_help_shows_sink_and_limit():
     result = runner.invoke(app, ["status", "--help"])
     assert result.exit_code == 0
-    out = _plain(result.output)
-    assert "--sink" in out
-    assert "--limit" in out
+    assert "--sink" in result.output
+    assert "--limit" in result.output
 
 
 def test_migrate_help_shows_from_to_strategy():
     result = runner.invoke(app, ["migrate", "--help"])
     assert result.exit_code == 0
-    out = _plain(result.output)
     for flag in ("--from", "--to", "--sink", "--strategy"):
-        assert flag in out
+        assert flag in result.output
 
 
 # ── drift status — real ledger smoke test ────────────────────────────────────
@@ -90,7 +78,7 @@ def test_status_with_seeded_ledger(tmp_path):
 # ── drift migrate — strategy validation & dual-write ────────────────────────
 
 def test_migrate_dual_write_without_qdrant_exits_one(tmp_path, monkeypatch):
-    """dual-write is implemented in v0.3; without a reachable Qdrant it must fail."""
+    """dual-write is implemented; without a reachable Qdrant it must fail."""
     monkeypatch.setattr(
         "drift.migrate._scroll_qdrant_texts",
         lambda *a, **kw: (_ for _ in ()).throw(ConnectionError("qdrant unreachable")),
@@ -117,7 +105,7 @@ def test_migrate_unknown_strategy_exits_one():
     assert "Unknown strategy" in result.output
 
 
-def test_migrate_shadow_eval_exits_one_with_v2_message():
+def test_migrate_shadow_eval_exits_one_with_planned_message():
     result = runner.invoke(app, [
         "migrate",
         "--from", "openai/ada-002", "--to", "openai/3-small",
@@ -126,4 +114,4 @@ def test_migrate_shadow_eval_exits_one_with_v2_message():
     ])
     assert result.exit_code == 1
     assert "[stub]" in result.output
-    assert "v2" in result.output
+    assert "planned" in result.output

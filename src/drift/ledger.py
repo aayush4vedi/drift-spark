@@ -109,7 +109,7 @@ class Ledger:
         embedded before Drift was introduced, or the ledger was wiped).
 
         The cost_usd returned is the total cost of the run that produced this
-        vector — not the per-vector cost (which isn't tracked at v0.1 granularity).
+        vector — not the per-vector cost (not tracked at run granularity).
         """
         cur = self._conn.execute(
             """SELECT p.embedding_id, p.source_pk, p.source_hash, p.created_at,

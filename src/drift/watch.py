@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -10,6 +9,7 @@ from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 from .embed import _text_hash, embed
+from ._utils import _get_spark
 
 
 @dataclass
@@ -55,37 +55,11 @@ def _delete_from_sink(sink: str, texts: list[str]) -> int:
         return _delete_qdrant(sink, texts)
     elif u.scheme in ("pg", "postgresql"):
         raise NotImplementedError(
-            "pgvector CDC delete coming in v0.2. Use Qdrant sink for CDC."
+            "pgvector CDC delete is not yet supported (planned for v0.2). "
+            "Use Qdrant sink for CDC workflows."
         )
     else:
         raise ValueError(f"Unsupported sink scheme: {u.scheme!r}. Use 'qdrant://'.")
-
-
-# ── Spark session helper (same pattern as embed.py) ───────────────────────────
-
-def _get_spark():
-    try:
-        from pyspark.sql import SparkSession
-    except ImportError:
-        raise ImportError("pip install 'drift-spark[spark]' to use watch()")
-
-    spark = SparkSession.getActiveSession()
-    if spark is None:
-        for _path in (
-            "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
-            "/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
-        ):
-            if os.path.isdir(_path):
-                os.environ.setdefault("JAVA_HOME", _path)
-                break
-        spark = (
-            SparkSession.builder
-            .appName("drift-watch")
-            .master("local[*]")
-            .getOrCreate()
-        )
-        spark.sparkContext.setLogLevel("WARN")
-    return spark
 
 
 # ── public API ────────────────────────────────────────────────────────────────
@@ -136,7 +110,7 @@ def watch(
     )
     t0 = time.monotonic()
 
-    spark = _get_spark()
+    spark = _get_spark("drift-watch")
 
     # Read Delta CDF from since_version onward
     cdf = (

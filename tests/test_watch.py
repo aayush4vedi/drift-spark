@@ -265,7 +265,7 @@ def test_last_watch_version_is_sink_scoped(tmp_path):
 # ── pgvector CDC stub ────────────────────────────────────────────────────────
 
 def test_delete_from_sink_raises_for_pgvector():
-    with pytest.raises(NotImplementedError, match="v0.2"):
+    with pytest.raises(NotImplementedError, match="pgvector"):
         _delete_from_sink("pg://localhost/mydb", ["some text"])
 
 

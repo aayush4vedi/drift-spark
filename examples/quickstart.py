@@ -1,6 +1,9 @@
 """
 Drift quickstart — no API key needed (shadow_mode=True).
 
+shadow_mode skips the OpenAI call (zero cost) but still writes real vectors
+to the sink, so Qdrant is required either way.
+
 Requires:
     pip install 'drift-spark[spark,qdrant]'
     docker run -p 6333:6333 qdrant/qdrant   # local Qdrant

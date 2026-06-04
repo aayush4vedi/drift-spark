@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-import os
 import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from urllib.parse import urlparse, urlunparse
+
+from ._utils import _get_spark
 
 STRATEGIES = ("dual-write", "shadow-eval", "drift-adapter")
 
@@ -81,33 +82,6 @@ def _scroll_qdrant_texts(sink: str, collection: str) -> list[str]:
     return texts
 
 
-# ── Spark session helper (same pattern as embed.py / watch.py) ────────────────
-
-def _get_spark():
-    try:
-        from pyspark.sql import SparkSession
-    except ImportError:
-        raise ImportError("pip install 'drift-spark[spark]' to use migrate()")
-
-    spark = SparkSession.getActiveSession()
-    if spark is None:
-        for _path in (
-            "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
-            "/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
-        ):
-            if os.path.isdir(_path):
-                os.environ.setdefault("JAVA_HOME", _path)
-                break
-        spark = (
-            SparkSession.builder
-            .appName("drift-migrate")
-            .master("local[*]")
-            .getOrCreate()
-        )
-        spark.sparkContext.setLogLevel("WARN")
-    return spark
-
-
 # ── public API ────────────────────────────────────────────────────────────────
 
 def migrate(
@@ -122,7 +96,7 @@ def migrate(
     """
     Migrate embeddings from one model to another using the dual-write strategy.
 
-    Dual-write (v0.3):
+    Dual-write:
         1. Scroll all vectors from the original collection, extract source_text payloads.
         2. Re-embed all texts with to_model → write to <collection>_v2.
         3. Return MigrateRun with n_source and n_migrated for verification.
@@ -162,7 +136,7 @@ def migrate(
         from_model:   current model, e.g. 'openai/text-embedding-ada-002'
         to_model:     target model, e.g. 'openai/text-embedding-3-small'
         sink:         URI of the existing collection, e.g. 'qdrant://localhost:6333/docs'
-        strategy:     'dual-write' (v0.3). 'shadow-eval' and 'drift-adapter' in v2.
+        strategy:     'dual-write' or 'drift-adapter'. 'shadow-eval' is planned.
         shadow_mode:  use mock vectors — no API calls, no cost. Safe for testing.
         ledger:       Ledger instance; creates ~/.drift/ledger.db if None.
 
@@ -176,14 +150,14 @@ def migrate(
     if strategy == "shadow-eval":
         raise NotImplementedError(
             "strategy='shadow-eval' is planned for v2. "
-            "Use 'dual-write' or 'drift-adapter' in v1.0."
+            "Use 'dual-write' or 'drift-adapter'."
         )
 
     u = urlparse(sink)
     if u.scheme != "qdrant":
         raise NotImplementedError(
-            f"migrate() only supports qdrant:// sinks in v1.0. Got: {u.scheme!r}. "
-            "pgvector migration coming in v0.4."
+            f"migrate() currently supports only qdrant:// sinks. Got: {u.scheme!r}. "
+            "pgvector migration is planned."
         )
 
     from .ledger import Ledger as _Ledger
@@ -256,7 +230,7 @@ def migrate(
     # We reuse embed() so batching, backoff, shadow_mode, and ledger writes
     # are all inherited for free. dedup=False: always re-embed everything on
     # migration regardless of prior ledger state.
-    spark = _get_spark()
+    spark = _get_spark("drift-migrate")
     df = spark.createDataFrame(
         [{"_migrate_idx": str(i), "_migrate_text": t} for i, t in enumerate(texts)]
     )

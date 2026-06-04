@@ -1,6 +1,28 @@
-.venv/
+# Python
 __pycache__/
 *.pyc
+.venv/
+venv/
+
+# Build artifacts
 dist/
+build/
 *.egg-info/
 .eggs/
+
+# Test / lint / type caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Drift runtime
+*.drift_adapter*.npy
+.drift/
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
