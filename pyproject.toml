@@ -38,7 +38,7 @@ drift = "drift.cli:app"
 
 [project.optional-dependencies]
 spark = ["pyspark>=3.4.0"]
-qdrant = ["qdrant-client>=1.18.0"]
+qdrant = ["qdrant-client>=1.7.0"]
 pgvector = ["psycopg2-binary>=2.9.0"]
 delta = ["delta-spark>=3.0.0"]
 all = ["pyspark>=3.4.0", "qdrant-client>=1.18.0", "psycopg2-binary>=2.9.0", "delta-spark>=3.0.0"]

@@ -85,7 +85,13 @@ def level_0() -> None:
     t = time.time()
     try:
         import drift
-        from drift import DriftAdapter, measure_arr, AdapterQualityError, Ledger, MigrateRun  # noqa: F401
+        from drift import (  # noqa: F401
+            AdapterQualityError,
+            DriftAdapter,
+            Ledger,
+            measure_arr,
+            MigrateRun,
+        )
 
         assert hasattr(drift, "__version__"), "drift.__version__ missing"
         assert drift.__version__ == "0.5.0", f"expected 0.5.0, got {drift.__version__!r}"
