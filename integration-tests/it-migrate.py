@@ -138,7 +138,8 @@ r2 = migrate(from_model=MODEL_OLD, to_model=MODEL_NEW, sink=SINK_OLD,
 count_after_second = _count("migrate_it_source_v2")
 
 check(count_after_first == 10,  f"_v2 has 10 after first migration  (got {count_after_first})")
-check(count_after_second == 10, f"_v2 still has 10 after second migration  (got {count_after_second})")
+check(count_after_second == 10,
+      f"_v2 still has 10 after second migration  (got {count_after_second})")
 check(r2.n_source == 10,   f"second migrate() n_source == 10  (got {r2.n_source})")
 
 # ── Level 4: backfill gap simulation ─────────────────────────────────────────

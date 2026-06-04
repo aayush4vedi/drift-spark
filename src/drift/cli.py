@@ -17,13 +17,19 @@ app = typer.Typer(
 def embed(
     table: str = typer.Option(..., "--table", help="Delta table path or catalog.schema.table"),
     text_col: str = typer.Option(..., "--text-col", help="Column name containing text to embed"),
-    model: str = typer.Option("openai/text-embedding-3-small", "--model", help="provider/model-name"),
+    model: str = typer.Option(
+        "openai/text-embedding-3-small", "--model", help="provider/model-name"
+    ),
     sink: str = typer.Option(..., "--sink", help="qdrant://host:port/collection"),
     batch_size: int = typer.Option(128, "--batch-size", help="Rows per API call"),
     no_dedup: bool = typer.Option(False, "--no-dedup", help="Disable deduplication"),
     shadow_mode: bool = typer.Option(
-        False, "--shadow-mode",
-        help="Mock embeddings — no API calls, no cost. Identical to live mode for dedup/provenance. Safe for CI and local dev.",
+        False,
+        "--shadow-mode",
+        help=(
+            "Mock embeddings — no API calls, no cost. "
+            "Identical to live mode for dedup/provenance. Safe for CI and local dev."
+        ),
     ),
 ):
     """Embed a Spark table column and upsert vectors to a sink."""
@@ -45,10 +51,13 @@ def embed(
             ledger=Ledger(),
         )
         typer.echo(f"  ✓ run_id={run.run_id}")
-        typer.echo(f"  rows={run.n_rows_processed}  deduped={run.n_rows_deduped}  cost=${run.cost_usd:.4f}")
+        typer.echo(
+            f"  rows={run.n_rows_processed}  deduped={run.n_rows_deduped}"
+            f"  cost=${run.cost_usd:.4f}"
+        )
     except NotImplementedError as e:
         typer.echo(f"  [stub] {e}", err=True)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 @app.command()
@@ -57,15 +66,18 @@ def watch(
     text_col: str = typer.Option(..., "--text-col"),
     sink: str = typer.Option(..., "--sink"),
     model: str = typer.Option("openai/text-embedding-3-small", "--model"),
-    since_version: Optional[int] = typer.Option(None, "--since-version", help="Delta version to start from"),
+    since_version: Optional[int] = typer.Option(  # noqa: UP045
+        None, "--since-version", help="Delta version to start from"
+    ),
     shadow_mode: bool = typer.Option(
-        False, "--shadow-mode",
+        False,
+        "--shadow-mode",
         help="Mock embeddings — no API calls, no cost. Same as embed --shadow-mode.",
     ),
 ):
     """Incrementally refresh embeddings from a Delta table via CDC."""
-    from .watch import watch as _watch
     from .ledger import Ledger
+    from .watch import watch as _watch
 
     typer.echo(f"[drift watch] table={table} since_version={since_version}")
     try:
@@ -78,10 +90,13 @@ def watch(
             shadow_mode=shadow_mode,
             ledger=Ledger(),
         )
-        typer.echo(f"  ✓ inserted={run.n_inserted}  updated={run.n_updated}  deleted={run.n_deleted}")
+        typer.echo(
+            f"  ✓ inserted={run.n_inserted}  updated={run.n_updated}"
+            f"  deleted={run.n_deleted}"
+        )
     except NotImplementedError as e:
         typer.echo(f"  [stub] {e}", err=True)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 @app.command()
@@ -110,22 +125,30 @@ def status(
 
 @app.command()
 def migrate(
-    from_model: str = typer.Option(..., "--from", help="Current model string, e.g. openai/text-embedding-ada-002"),
-    to_model: str = typer.Option(..., "--to", help="Target model string, e.g. openai/text-embedding-3-small"),
+    from_model: str = typer.Option(
+        ..., "--from", help="Current model string, e.g. openai/text-embedding-ada-002"
+    ),
+    to_model: str = typer.Option(
+        ..., "--to", help="Target model string, e.g. openai/text-embedding-3-small"
+    ),
     sink: str = typer.Option(..., "--sink", help="Sink URI of the existing collection"),
-    strategy: str = typer.Option("dual-write", "--strategy", help="dual-write | shadow-eval | drift-adapter"),
+    strategy: str = typer.Option(
+        "dual-write", "--strategy", help="dual-write | shadow-eval | drift-adapter"
+    ),
     shadow_mode: bool = typer.Option(
-        False, "--shadow-mode",
+        False,
+        "--shadow-mode",
         help="Mock embeddings — no API calls, no cost. Safe for testing migration flow.",
     ),
 ):
-    """Migrate embeddings to a new model using dual-write (re-embed all docs into <collection>_v2)."""
-    from .migrate import migrate as _migrate, STRATEGIES
+    """Migrate embeddings to a new model (dual-write re-embeds into <collection>_v2)."""
     from .ledger import Ledger
+    from .migrate import STRATEGIES
+    from .migrate import migrate as _migrate
 
     if strategy not in STRATEGIES:
         typer.echo(f"Unknown strategy {strategy!r}. Choose from: {', '.join(STRATEGIES)}", err=True)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     typer.echo(f"[drift migrate] {from_model} → {to_model}  strategy={strategy}  sink={sink}")
 
@@ -140,7 +163,7 @@ def migrate(
         )
     except NotImplementedError as e:
         typer.echo(f"  [stub] {e}", err=True)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     if run.adapter_path:
         # drift-adapter: no new collection, old index stays unchanged

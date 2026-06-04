@@ -138,8 +138,16 @@ else:
                 pass
 
     def _seed(n: int, sink: str) -> None:
-        rows = [{"id": str(i), "body": f"Support ticket {i}: {['login', 'billing', 'feature', 'outage', 'other'][i % 5]} issue"}
-                for i in range(n)]
+        rows = [
+            {
+                "id": str(i),
+                "body": (
+                    f"Support ticket {i}: "
+                    f"{['login', 'billing', 'feature', 'outage', 'other'][i % 5]} issue"
+                ),
+            }
+            for i in range(n)
+        ]
         df = spark.createDataFrame(rows)
         embed(df, text_col="body", model=MODEL_OLD, sink=sink,
               shadow_mode=True, dedup=False, ledger=Ledger())
@@ -160,7 +168,10 @@ else:
 
         check(run.strategy == "drift-adapter", "run.strategy == 'drift-adapter'")
         check(run.arr == 1.0, f"ARR == 1.0 in shadow_mode  (got {run.arr:.4f})")
-        check(run.adapter_path.endswith(".npy"), f"adapter_path ends with .npy  (got {run.adapter_path!r})")
+        check(
+            run.adapter_path.endswith(".npy"),
+            f"adapter_path ends with .npy  (got {run.adapter_path!r})",
+        )
         check(Path(run.adapter_path).exists(), "adapter .npy file exists on disk")
         check(run.n_source == 100, f"n_source == 100  (got {run.n_source})")
         check(run.sink_v2 == "", "sink_v2 is empty (old index untouched)")
@@ -173,8 +184,14 @@ else:
         q_new = np.array(_mock_embedding("test query"), dtype=np.float32)
         q_adapted = loaded_adapter.predict(q_new)
         check(q_adapted.shape == q_new.shape, "predict() output shape matches input")
-        check(np.allclose(loaded_adapter.R @ loaded_adapter.R.T, np.eye(loaded_adapter.R.shape[0]), atol=1e-3),
-              "loaded adapter R is orthogonal")
+        check(
+            np.allclose(
+                loaded_adapter.R @ loaded_adapter.R.T,
+                np.eye(loaded_adapter.R.shape[0]),
+                atol=1e-3,
+            ),
+            "loaded adapter R is orthogonal",
+        )
 
         _cleanup("adapter_it_source")
 

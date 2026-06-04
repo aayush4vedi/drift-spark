@@ -7,13 +7,17 @@ import math
 import random
 import time
 import uuid
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Iterator
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
+from ._utils import _get_spark
 
 # ── cost table (USD per token) ───────────────────────────────────────────────
+# NOTE: prices hardcoded as of June 2025 (OpenAI). Verify at
+# platform.openai.com/pricing before using for budget decisions.
+# Configurable override is planned for v1.0.
 _COST_PER_TOKEN: dict[str, float] = {
     "text-embedding-3-small": 0.02 / 1_000_000,
     "text-embedding-3-large": 0.13 / 1_000_000,
@@ -81,13 +85,13 @@ def _embed_openai(
     """Call OpenAI Embeddings API in batches with exponential backoff on 429."""
     try:
         from openai import OpenAI, RateLimitError
-    except ImportError:
-        raise ImportError("pip install openai to use OpenAI models")
+    except ImportError as err:
+        raise ImportError("pip install openai to use OpenAI models") from err
 
     import os
     api_key = os.environ.get("OPENAI_API_KEY", "")
     if not api_key:
-        raise EnvironmentError(
+        raise OSError(
             "OPENAI_API_KEY is not set. "
             "Set it in your environment, or pass shadow_mode=True for cost-free testing."
         )
@@ -115,12 +119,14 @@ def _embed_openai(
 # ── sink writers ─────────────────────────────────────────────────────────────
 
 def _upsert_qdrant(sink: str, points: list[dict]) -> None:
-    """Upsert to Qdrant. points = [{id, vector, payload}]."""
+    """
+    Upsert to Qdrant. points = [{id, vector, payload}].
+    """
     try:
         from qdrant_client import QdrantClient
-        from qdrant_client.models import Distance, VectorParams, PointStruct
-    except ImportError:
-        raise ImportError("pip install 'drift-spark[qdrant]' to use the Qdrant sink")
+        from qdrant_client.models import Distance, PointStruct, VectorParams
+    except ImportError as err:
+        raise ImportError("pip install 'drift-spark[qdrant]' to use the Qdrant sink") from err
 
     u = urlparse(sink)
     collection = u.path.strip("/")
@@ -149,7 +155,7 @@ def _upsert_qdrant(sink: str, points: list[dict]) -> None:
 
 def _upsert_pgvector(sink: str, points: list[dict]) -> None:
     """
-    Upsert to pgvector. Stub — basic INSERT, no CDC yet (v0.2).
+    Upsert to pgvector. Stub — basic INSERT, no CDC yet.
 
     URI format: pg://user:pass@host:5432/dbname?table=collection_name
     The table= query param names the target table (default: 'embeddings').
@@ -157,8 +163,8 @@ def _upsert_pgvector(sink: str, points: list[dict]) -> None:
     try:
         import psycopg2
         from psycopg2.extras import execute_values
-    except ImportError:
-        raise ImportError("pip install 'drift-spark[pgvector]' to use the pgvector sink")
+    except ImportError as err:
+        raise ImportError("pip install 'drift-spark[pgvector]' to use the pgvector sink") from err
 
     u = urlparse(sink)
     params = parse_qs(u.query)
@@ -247,34 +253,12 @@ def embed(
     if df is None:
         if source_table is None:
             raise ValueError("Provide either df or source_table.")
-        try:
-            from pyspark.sql import SparkSession
-        except ImportError:
-            raise ImportError("pip install 'drift-spark[spark]' for Spark table loading")
-        spark = SparkSession.getActiveSession()
-        if spark is None:
-            # CLI path: no session in this process — create a local one.
-            # On a cluster (Databricks, EMR) getActiveSession() always returns
-            # the live session; this branch only fires in local / CLI mode.
-            import os
-            _JAVA17 = "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
-            _JAVA17_INTEL = "/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
-            for _path in (_JAVA17, _JAVA17_INTEL):
-                if os.path.isdir(_path):
-                    os.environ.setdefault("JAVA_HOME", _path)
-                    break
-            spark = (
-                SparkSession.builder
-                .appName("drift-cli")
-                .master("local[*]")
-                .getOrCreate()
-            )
-            spark.sparkContext.setLogLevel("WARN")
+        spark = _get_spark("drift-cli")
         df = spark.table(source_table)
 
     # 2. Collect texts to driver ----------------------------------------------
-    # v0.1: driver-side collect; works up to ~10M rows on a cluster driver.
-    # v0.2 will add a distributed path via broadcast of known hashes.
+    # Driver-side collect; works up to ~10M rows on a cluster driver.
+    # A distributed path via broadcast of known hashes is planned.
     pdf = df.select(text_col).toPandas()
     all_texts: list[str] = pdf[text_col].tolist()
     run.n_rows_processed = len(all_texts)

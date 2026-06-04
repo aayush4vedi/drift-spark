@@ -5,7 +5,6 @@ import pytest
 
 from drift.adapter import DriftAdapter
 
-
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 def _rotation_matrix(d: int, theta_deg: float = 30.0) -> np.ndarray:

@@ -5,28 +5,65 @@ on:
     branches: ["**"]
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -e ".[qdrant,pgvector,dev]"
+      - name: Ruff
+        run: ruff check src/ tests/ examples/ integration-tests/
+      - name: Mypy
+        run: mypy
+        # py.typed is shipped — the type-check gate keeps that promise honest.
+
   test:
     runs-on: ubuntu-latest
-
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install drift-spark + dev deps
-        run: |
-          pip install -e ".[qdrant,pgvector]" pytest ruff
-          pip install pandas
-        # Excludes pyspark — too heavy for CI; all tests mock SparkSession/DataFrames.
-        # pandas needed by _spark_mock() helpers in test_embed.py + test_watch.py.
-        # Spark + Delta paths are covered by integration-tests/ (run locally).
-
-      - name: Lint
-        run: ruff check src/ tests/
+        run: pip install -e ".[qdrant,pgvector,dev]"
+        # Excludes pyspark — too heavy for CI; all unit tests mock SparkSession/DataFrames.
+        # Spark + Delta paths are covered by integration-tests/ (run locally / Docker).
 
       - name: Test
-        run: pytest tests/ -v
-        # integration-tests/ is excluded — requires Docker (Qdrant) + delta-spark locally.
+        run: pytest tests/ -v --cov=drift --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Build sdist + wheel
+        run: |
+          pip install build twine
+          python -m build
+          twine check dist/*

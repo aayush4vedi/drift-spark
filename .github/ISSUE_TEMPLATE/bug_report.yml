@@ -1,0 +1,54 @@
+name: Bug report
+description: Report something that isn't working as documented
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please fill in as much as you
+        can — a minimal reproduction is the single most helpful thing.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you get instead?
+      placeholder: "embed() raised ... but the README says ..."
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: The smallest snippet that reproduces the issue. Prefer `shadow_mode=True` so no API key is needed.
+      render: python
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: drift-spark version
+      placeholder: "0.5.0 (output of `python -c 'import drift; print(drift.__version__)'`)"
+    validations:
+      required: true
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      placeholder: "3.11"
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Spark version, sink (Qdrant/pgvector) and version, where relevant.
+      placeholder: "macOS 14, pyspark 3.5, Qdrant 1.18"
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / traceback
+      render: shell
+    validations:
+      required: false

@@ -17,7 +17,7 @@ class DriftAdapter:
 
     R: np.ndarray  # shape (d, d), orthogonal: R @ R.T ≈ I
 
-    def fit(self, old_vecs: np.ndarray, new_vecs: np.ndarray) -> "DriftAdapter":
+    def fit(self, old_vecs: np.ndarray, new_vecs: np.ndarray) -> DriftAdapter:
         """
         Solve Orthogonal Procrustes: find R = argmin ||X_old - X_new @ R.T||_F
         subject to R orthogonal.
@@ -66,7 +66,7 @@ class DriftAdapter:
         np.save(path, self.R)
 
     @classmethod
-    def load(cls, path: str) -> "DriftAdapter":
+    def load(cls, path: str) -> DriftAdapter:
         """Deserialise from a .npy file."""
         adapter = cls.__new__(cls)
         adapter.R = np.load(path)

@@ -6,7 +6,6 @@ import pytest
 from drift.adapter import DriftAdapter
 from drift.shadow_eval import AdapterQualityError, measure_arr
 
-
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 def _unit_norm(X: np.ndarray) -> np.ndarray:
