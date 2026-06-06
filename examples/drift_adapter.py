@@ -89,7 +89,7 @@ query_adapted = loaded.predict(query_new)  # maps into old model's space
 cos_sim = float(query_adapted @ X_old[0])  # should be ≈ 1.0 for a perfect rotation
 print("\nQuery-time adapter:")
 print(f"  cos_sim(adapted_query, oracle_old_vec) = {cos_sim:.4f}  (1.0 = perfect)")
-print(f"  → send query_adapted to Qdrant as your search vector (no reindex needed)")
+print("  → send query_adapted to Qdrant as your search vector (no reindex needed)")
 
 # ── Part B: Full pipeline via migrate() ───────────────────────────────────────
 if "--full" not in sys.argv:
@@ -104,7 +104,7 @@ print("\n" + "=" * 60)
 print("Part B: Full pipeline via migrate(strategy='drift-adapter')")
 print("=" * 60)
 
-from drift.migrate import migrate
+from drift.migrate import migrate  # noqa: E402
 
 SINK = "qdrant://localhost:6333/my_docs"   # must already exist, populated by drift embed()
 
@@ -124,9 +124,9 @@ try:
     print(f"  ✓ Trained on:   {run.n_source} paired samples")
     print(f"  ✓ Duration:     {run.duration_s:.1f}s")
     print(f"\n  Your {SINK} collection is untouched.")
-    print(f"  Load the adapter at query time:")
+    print("  Load the adapter at query time:")
     print(f"    adapter = DriftAdapter.load('{run.adapter_path}')")
-    print(f"    adapted_vec = adapter.predict(new_model_query_vec)")
+    print("    adapted_vec = adapter.predict(new_model_query_vec)")
     print(f"    qdrant.search('{SINK.split('/')[-1]}', adapted_vec, limit=10)")
 except AdapterQualityError as e:
     print(f"\n  ✗ Adapter quality too low: ARR={e.arr:.3f} < {e.threshold}")
