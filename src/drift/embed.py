@@ -10,6 +10,7 @@ import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Any
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from ._utils import _get_spark
@@ -306,7 +307,7 @@ def embed(
     # 5. Upsert to sink -------------------------------------------------------
     now = datetime.now(timezone.utc).isoformat()
     # ID = deterministic UUID from text hash → idempotent upserts on retry
-    points = [
+    points: list[dict[str, Any]] = [
         {
             "id": str(uuid.uuid5(uuid.NAMESPACE_OID, h)),
             "vector": vec,

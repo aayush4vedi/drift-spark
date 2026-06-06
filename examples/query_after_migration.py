@@ -23,6 +23,7 @@ Requires:
     pip install 'drift-spark[spark,qdrant]'
     docker run -p 6333:6333 qdrant/qdrant
 """
+
 import os
 from urllib.parse import urlparse
 
@@ -147,7 +148,7 @@ for h in hits:
 print("\n" + "=" * 64)
 print("Picking between the two in production:")
 print("=" * 64)
-print(f"""
+print("""
   drift-adapter  → cheap (one .npy file), instant rollback (delete the file),
                    old collection stays canonical. Use when ARR ≥ 0.97.
 

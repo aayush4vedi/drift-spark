@@ -43,7 +43,7 @@ def _delete_qdrant(sink: str, texts: list[str]) -> int:
     client = QdrantClient(host=u.hostname or "localhost", port=u.port or 6333)
     client.delete(
         collection_name=collection,
-        points_selector=PointIdsList(points=point_ids),
+        points_selector=PointIdsList(points=point_ids),  # type: ignore[arg-type]
     )
     return len(point_ids)
 

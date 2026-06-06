@@ -64,6 +64,10 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B"]
 
+[tool.ruff.lint.per-file-ignores]
+"examples/*.py" = ["E402", "I001"]
+"integration-tests/*.py" = ["E402", "I001"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
@@ -81,7 +85,7 @@ exclude_lines = [
 ]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 files = ["src/drift"]
 ignore_missing_imports = true
 warn_unused_ignores = true

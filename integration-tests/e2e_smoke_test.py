@@ -251,7 +251,7 @@ def level_4() -> None:
             ledger = Ledger(db_path=f"{tmp}/ledger.db")
 
             with patch("drift.embed._upsert_qdrant"):
-                run = embed(
+                embed(
                     df=None, source_table=TABLE, text_col=TEXT_COL,
                     model=MODEL_OLD, sink=SINK, dedup=True,
                     shadow_mode=True, ledger=ledger,
@@ -412,7 +412,7 @@ def main() -> int:
     if failed:
         print(f"  {failed} level(s) FAILED\n")
         return 1
-    print(f"  All levels passed.\n")
+    print("  All levels passed.\n")
     return 0
 
 

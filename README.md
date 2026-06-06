@@ -8,12 +8,11 @@
 
 <p>
   <a href="https://pypi.org/project/drift-spark/"><img src="https://img.shields.io/pypi/v/drift-spark.svg?color=2b88d8&label=pypi" alt="PyPI"></a>
-  <a href="https://pypi.org/project/drift-spark/"><img src="https://img.shields.io/pypi/pyversions/drift-spark.svg?color=2b88d8" alt="Python versions"></a>
+  <a href="https://pypi.org/project/drift-spark/"><img src="https://img.shields.io/badge/python-3.11%2B-2b88d8" alt="Python 3.11+"></a>
   <a href="https://github.com/aayush4vedi/drift-spark/actions/workflows/ci.yml"><img src="https://github.com/aayush4vedi/drift-spark/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
   <a href="https://codecov.io/gh/aayush4vedi/drift-spark"><img src="https://codecov.io/gh/aayush4vedi/drift-spark/branch/main/graph/badge.svg" alt="Coverage"></a>
-  <a href="https://pypi.org/project/drift-spark/"><img src="https://img.shields.io/pypi/dm/drift-spark.svg?color=2b88d8&label=downloads" alt="Downloads"></a>
+  <a href="https://pepy.tech/project/drift-spark"><img src="https://static.pepy.tech/badge/drift-spark/month?color=2b88d8" alt="Downloads"></a>
   <a href="https://arxiv.org/abs/2509.23471"><img src="https://img.shields.io/badge/arXiv-2509.23471-b31b1b.svg" alt="arXiv paper"></a>
-  <a href="https://github.com/aayush4vedi/drift-spark/blob/main/LICENSE"><img src="https://img.shields.io/pypi/l/drift-spark.svg?color=2b88d8" alt="License"></a>
 </p>
 
 <p>
@@ -344,4 +343,4 @@ python integration-tests/it-migrate.py
 
 Drift is released under the [MIT License](LICENSE).
 
-<div align="center"><sub>Built for data teams who treat embeddings as production infrastructure.</sub></div>
+<div align="center"><sub>"Not all those who wander are lost — but drifting embeddings usually are." — J.R.R. Tolkien (adjusted for production)</sub></div>

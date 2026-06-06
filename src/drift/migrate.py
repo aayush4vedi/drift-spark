@@ -55,7 +55,7 @@ def _scroll_qdrant_texts(sink: str, collection: str) -> list[str]:
     try:
         from qdrant_client.http.exceptions import UnexpectedResponse
     except ImportError:
-        UnexpectedResponse = Exception  # fallback; scroll will still raise
+        UnexpectedResponse = Exception  # type: ignore[assignment, misc]
 
     texts: list[str] = []
     offset = None
@@ -74,7 +74,7 @@ def _scroll_qdrant_texts(sink: str, collection: str) -> list[str]:
                 return []
             raise
         for point in results:
-            text = point.payload.get("source_text", "")
+            text = (point.payload or {}).get("source_text", "")
             if text:
                 texts.append(text)
         if offset is None:
