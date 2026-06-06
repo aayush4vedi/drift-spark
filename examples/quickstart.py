@@ -9,6 +9,7 @@ Requires:
     docker run -p 6333:6333 qdrant/qdrant   # local Qdrant
 """
 from pyspark.sql import SparkSession
+
 from drift import embed
 
 spark = SparkSession.builder.master("local[*]").appName("drift-quickstart").getOrCreate()

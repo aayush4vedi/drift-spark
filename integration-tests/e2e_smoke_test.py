@@ -412,7 +412,7 @@ def main() -> int:
     if failed:
         print(f"  {failed} level(s) FAILED\n")
         return 1
-    print(f"  All levels passed.\n")
+    print("  All levels passed.\n")
     return 0
 
 

@@ -130,5 +130,5 @@ try:
     print(f"    qdrant.search('{SINK.split('/')[-1]}', adapted_vec, limit=10)")
 except AdapterQualityError as e:
     print(f"\n  ✗ Adapter quality too low: ARR={e.arr:.3f} < {e.threshold}")
-    print(f"  Recommendation: use migrate(strategy='dual-write') for a full reindex.")
+    print("  Recommendation: use migrate(strategy='dual-write') for a full reindex.")
     sys.exit(1)

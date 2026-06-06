@@ -269,9 +269,9 @@ if errors:
     sys.exit(1)
 else:
     print("ALL LEVELS PASSED")
-    print(f"  Level 1: pure NumPy pipeline              ✓")
+    print("  Level 1: pure NumPy pipeline              ✓")
     qdrant_note = "[skipped]" if SKIP_QDRANT else "✓"
     print(f"  Level 2: migrate() drift-adapter          {qdrant_note}")
-    print(f"  Level 3: ARR quality gate                 ✓")
+    print("  Level 3: ARR quality gate                 ✓")
     print(f"  Level 4: CLI end-to-end                   {qdrant_note}")
     sys.exit(0)
