@@ -1,7 +1,5 @@
 """Subsystem 1: batch embedding with dedup, multi-model, multi-sink."""
 
-from __future__ import annotations
-
 import hashlib
 import math
 import random
@@ -14,7 +12,6 @@ from typing import Any
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from ._utils import _get_spark
-
 
 # ── cost table (USD per token) ───────────────────────────────────────────────
 # NOTE: prices hardcoded as of June 2025 (OpenAI). Verify at
