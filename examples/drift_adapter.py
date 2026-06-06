@@ -18,6 +18,7 @@ Run Part B:
 """
 
 import sys
+
 import numpy as np
 
 from drift.adapter import DriftAdapter
@@ -77,7 +78,7 @@ except AdapterQualityError as e:
 
 # Step 4: Save
 adapter.save("drift_adapter_example.npy")
-print(f"\nAdapter saved → drift_adapter_example.npy")
+print("\nAdapter saved → drift_adapter_example.npy")
 
 # Step 5: Load and apply at query time
 loaded = DriftAdapter.load("drift_adapter_example.npy")
@@ -86,7 +87,7 @@ query_new = X_new[0]                    # new-model query vector (from user inpu
 query_adapted = loaded.predict(query_new)  # maps into old model's space
 
 cos_sim = float(query_adapted @ X_old[0])  # should be ≈ 1.0 for a perfect rotation
-print(f"\nQuery-time adapter:")
+print("\nQuery-time adapter:")
 print(f"  cos_sim(adapted_query, oracle_old_vec) = {cos_sim:.4f}  (1.0 = perfect)")
 print(f"  → send query_adapted to Qdrant as your search vector (no reindex needed)")
 
