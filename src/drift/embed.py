@@ -1,5 +1,7 @@
 """Subsystem 1: batch embedding with dedup, multi-model, multi-sink."""
 
+from __future__ import annotations
+
 import hashlib
 import math
 import random
