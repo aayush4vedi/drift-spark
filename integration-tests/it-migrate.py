@@ -181,8 +181,8 @@ if errors:
     sys.exit(1)
 else:
     print("ALL LEVELS PASSED")
-    print(f"  Level 1: basic migration (20 docs)  ✓")
-    print(f"  Level 2: empty collection (0 docs)  ✓")
-    print(f"  Level 3: idempotent re-migration     ✓")
-    print(f"  Level 4: backfill gap simulation     ✓")
+    print("  Level 1: basic migration (20 docs)  ✓")
+    print("  Level 2: empty collection (0 docs)  ✓")
+    print("  Level 3: idempotent re-migration     ✓")
+    print("  Level 4: backfill gap simulation     ✓")
     sys.exit(0)
